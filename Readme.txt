@@ -11,7 +11,7 @@
 
 We have zipped everything as the files were very large
 
-6. The project report is CSCI586_Project_Report_Group1_Wednesday.pdf in the current directory
+6. The project report is "CSCI586_Project_Report_Group1_Wednesday.pdf" in the current directory
 
-7. The project presentation is also present in the same repository
+7. The project presentation "CSCI586_Project_Report_Group1_Wednesday.pptx" is also present in the same repository
 
