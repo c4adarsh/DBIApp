@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Cell Phone Mart</title>
+	<link rel="shortcut icon" href="favicon.ico">
+	<link rel="stylesheet" href="css/themes/default/jquery.mobile-1.4.5.min.css">
+	<link rel="stylesheet" href="_assets/css/jqm-demos.css">
+	<link rel="stylesheet" href="_assets/css/index.css">
+    
+	<script src="js/jquery.js"></script>
+	<script src="_assets/js/index.js"></script>
+	<script src="js/jquery.mobile-1.4.5.min.js"></script>
+ 	 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  	 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+    <!--<script src="https://canvasjs.com/assets/script/jquery-1.11.1.min.js"></script> -->
+    <script src="https://canvasjs.com/assets/script/jquery.canvasjs.min.js"></script>
+
+	<script type="text/javascript">
+	$(document).ready(function () {
+		$("#bgvid").get(0).width = window.innerWidth;
+
+
+        
+		// $("#bgvid").get(0).height = window.innerHeight - 10;
+
+// Q1 Ask for numeric RAM, Average, battery values to display multi series bar chart
+
+		//we get the top 15 models based on the user ratings
+        // we merge comments and the features table and extract some important features too
+        //returns a list of objects
+        function getTop10ModelsWithHighestUserRating(option){
+            var SPARQL_ENDPOINT = 'http://localhost:3030/ds4/query';
+            var query = "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
+                        "PREFIX owl: <http://www.w3.org/2002/07/owl#> " +
+                        "PREFIX cellphone: <http://www.usc.org/dbi/cellphone#>" +
+                        "SELECT ?brand_name ?model_name ?average ?profit_2016 " +
+                        "WHERE { " +
+                                "{"+
+									"?brand_uri cellphone:brand_name ?brand_name ." +    
+									"?model_uri cellphone:model_name ?model_name ." +
+									"?model_uri cellphone:has_brand ?brand_uri . " +
+									"?revenue_uri cellphone:profit_has_model ?model_uri ." +
+									"?revenue_uri cellphone:profit_2016 ?profit_2016."  +
+                                        "{"+ 
+                                            "SELECT ?model_uri (AVG(?rating) as ?average) (COUNT(?rating) as ?count) "+ 
+                                            "WHERE {"+ 
+                                                "?comment_uri cellphone:has_model ?model_uri ."+ 
+                                                "?comment_uri cellphone:comment_rating ?rating ."+ 
+                                                "} GROUP BY ?model_uri " + 
+                                                "HAVING (?count > 700) "+ 
+                                                "ORDER BY DESC (?average) "+ 
+                                                "LIMIT "+ option + 
+                                        "}"+ 
+                                "}"+ 
+                            "}";
+            $.ajax({
+                url: SPARQL_ENDPOINT
+                , method: 'post'
+                , data: { query: query}
+            }).done(function (result) {
+                console.log(result);
+                var ar = [];
+                for(var i=0; i<result.results.bindings.length; i++) {
+                    var ob = {};
+                    ob.y = Math.round(result.results.bindings[i].profit_2016.value * 10000)/10000;
+                    ob.label = result.results.bindings[i].brand_name.value + " " + result.results.bindings[i].model_name.value;
+                    ar.push(ob);
+                }
+                var chart = new CanvasJS.Chart("chartContainer", {
+                animationEnabled: true,
+                theme: "light1", // "light1", "light2", "dark1", "dark2"
+                title:{
+                    text: "Top Smartphones"
+                },
+                axisY: {
+                    title: "Revenue in Million"
+                },
+                data: [{        
+                    type: "column",  
+                    showInLegend: true, 
+                    legendMarkerColor: "grey",
+                    // legendText: "MMbbl = one million barrels",
+                    dataPoints: ar
+                }]
+            });
+            chart.render();
+            }).fail(function (e) {
+                console.log(e);
+            })
+        }
+
+// Q2
+        // Returns the top five brand names based on revenue, it also gives the details of these brands
+        function getTop5BrandsBasedOnRevenue(option2){
+            var SPARQL_ENDPOINT = 'http://localhost:3030/ds4/query';
+            var query = "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
+                        "PREFIX owl: <http://www.w3.org/2002/07/owl#> " +
+                        "PREFIX cellphone: <http://www.usc.org/dbi/cellphone#>" +
+                        "SELECT ?brand_name (SUM(?profits) as ?revenew) ?area_served ?employee_count ?founded ?head_quarters ?type ?website ?brand_uri " +
+                            "WHERE {" +
+           			            "?brand_uri cellphone:areas_served ?area_served ." +
+                                "?brand_uri cellphone:employee_count ?employee_count ." +
+                                "?brand_uri cellphone:founded ?founded ." +
+                                "?brand_uri cellphone:head_quarters ?head_quarters ." +
+                                "?brand_uri cellphone:type ?type ." +
+                                "?brand_uri cellphone:website ?website ." +
+                                "?model_uri  cellphone:has_brand ?brand_uri ." +
+                                "?brand_uri  cellphone:brand_name ?brand_name . " +
+                                "?model_uri  cellphone:model_name ?model_name ." +
+    				                "{" +
+                                        "SELECT ?model_uri ?profits " +
+                                        "WHERE { ?profit_uri cellphone:profit_has_model ?model_uri . " +
+                                                "?profit_uri cellphone:profit_2014 ?profits ." +
+                                                "}"+
+                                    "}"+
+			            "} GROUP BY ?brand_uri ?area_served ?employee_count ?founded ?head_quarters ?type ?website ?brand_name ORDER BY DESC (?revenew) LIMIT " + option2;
+            $.ajax({
+                url: SPARQL_ENDPOINT
+                , method: 'post'
+                , data: { query: query}
+            }).done(function (result) {
+                console.log(result);
+                var ar = [];
+                for(var i=0; i<result.results.bindings.length; i++) {
+                    var ob = {};
+                    ob.y = Math.round(result.results.bindings[i].revenew.value * 10000)/10000;
+                    ob.label = result.results.bindings[i].brand_name.value;
+                    ar.push(ob);
+                }
+                var chart = new CanvasJS.Chart("chartContainer2", {
+                animationEnabled: true,
+                theme: "light1", // "light1", "light2", "dark1", "dark2"
+                title:{
+                    text: "Top Companies"
+                },
+                axisY: {
+                    title: "Revenue"
+                },
+                data: [{        
+                    type: "column",  
+                    showInLegend: true, 
+                    legendMarkerColor: "grey",
+                    // legendText: "MMbbl = one million barrels",
+                    dataPoints: ar
+                }]
+            });
+            chart.render();
+            }).fail(function (e) {
+                console.log(e);
+            })
+        }
+
+// Q3
+        //It gives all the details of the cell phone
+        // 1. It returns 1 object with all the feature data and company data
+        // 2. It returns only comments
+        // Be careful, Data comes in an array in differnt chunks
+        // Please see the console .log where I have logged the output
+        // Please let me know if you have any doubt
+        // Things to display
+        // 1. Complete fetaure dataset, see the 355th object
+        //2. Comments
+        // there is a image URL
+        // Please make sure to show the image
+        // There should be 2 blank boxes or dropdowns 
+        //where in you can allow to select the model name and the brand name
+        // This is the query 3 in the query sheet
+        function getDetailsGivenModelNameAndBrandName(modelName = "Galaxy S6", BrandName = "Samsung"){
+            var SPARQL_ENDPOINT = 'http://localhost:3030/ds4/query';
+            var query = "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
+                        "PREFIX owl: <http://www.w3.org/2002/07/owl#> " +
+                        "PREFIX cellphone: <http://www.usc.org/dbi/cellphone#>" +
+                        "SELECT DISTINCT ?employee_count ?founded ?type ?website ?brand_uri ?model_name ?CPU ?EDGE ?GPRS ?RAM ?audio_jack ?battery" +
+                        "?image ?primary_camera ?rating ?screen_size ?sim ?os  ?weight ?model_uri ?profit_2014  ?profit_2015 ?profit_2016 ?comment_string "+
+                        "WHERE { " +
+                         "{"  + 
+                            "?brand_uri cellphone:brand_name \"" + BrandName + "\" . " +
+                            "?brand_uri cellphone:areas_served ?area_served ." +
+                            "?brand_uri cellphone:employee_count ?employee_count ."+
+                            "?brand_uri cellphone:founded ?founded ." +
+                            "?brand_uri cellphone:head_quarters ?head_quarters ." +
+                            "?brand_uri cellphone:type ?type ." +
+                            "?brand_uri cellphone:website ?website ." +
+                            "?model_uri  cellphone:has_brand ?brand_uri ." +
+                            "?model_uri cellphone:model_name \"" + modelName + "\" ." + 
+                            "?model_uri cellphone:CPU ?CPU ." +
+                            "?model_uri cellphone:EDGE ?EDGE ." +
+                            "?model_uri cellphone:GPRS ?GPRS ." +
+                            "?model_uri cellphone:RAM ?RAM ." +
+                            "?model_uri cellphone:audio_jack ?audio_jack ." +
+                            "?model_uri cellphone:battery ?battery . " +
+                            "?model_uri cellphone:image ?image . " +    
+                            "?model_uri cellphone:primary_camera ?primary_camera ." + 
+                            "?model_uri cellphone:rating ?rating ." +
+                            "?model_uri cellphone:screen_size ?screen_size ." +
+                            "?model_uri cellphone:sim ?sim . " +
+                            "?model_uri cellphone:os ?os. " +
+                            "?model_uri cellphone:weight ?weight." +
+                            "?profit_id cellphone:profit_has_model ?model_uri . " +
+                            "?profit_id cellphone:profit_2014 ?profit_2014 ." +
+                            "?profit_id cellphone:profit_2015 ?profit_2015 ." +
+                            "?profit_id cellphone:profit_2016 ?profit_2016 ." +
+                         "}" +
+                            "UNION" + 
+                         "{ " + 
+                            "?brand_uri_1 cellphone:brand_name \"" + BrandName + "\" ." +
+                            "?model_uri_1 cellphone:has_brand ?brand_uri_1 ." +
+                            "?model_uri_1 cellphone:model_name \"" + modelName + "\"." +
+                            "?comment_id cellphone:has_model ?model_uri_1 . " + 
+                            "?comment_id cellphone:comment_string ?comment_string ." +
+                         "}" +
+                        "}" ;
+            $.ajax({
+                url: SPARQL_ENDPOINT
+                , method: 'post'
+                , data: { query: query}
+            }).done(function (result) {
+                console.log(result);
+
+				$('#modal_header_value').html(BrandName + " " + modelName);
+				var comment_count = 1;
+				var comment_value = "";
+				for(var i=0; i<result.results.bindings.length; i++) {
+
+					//IMAGE
+                    if(result.results.bindings[i].image){
+						$("#image").contents().remove();
+						$("#image").attr("src",result.results.bindings[i].image.value);
+					}
+					//EDGE
+					if(result.results.bindings[i].EDGE){
+						$("#EDGE").contents().remove();
+						string_value = "<span style='color:#000'><b>EDGE : </b></span>"
+						$('#EDGE').html(string_value + result.results.bindings[i].EDGE.value);
+					}
+					//GPRS
+					if(result.results.bindings[i].GPRS){
+						$("#GPRS").contents().remove();
+						string_value = "<span style='color:#000'><b>GPRS : </b></span>"
+						$('#GPRS').html(string_value + result.results.bindings[i].GPRS.value);
+					}
+					//RAM
+					if(result.results.bindings[i].RAM){
+						$("#RAM").contents().remove();
+						string_value = "<span style='color:#000'><b>RAM : </b></span>"
+						$('#RAM').html(string_value + result.results.bindings[i].RAM.value);
+					}
+					//audio_jack
+					if(result.results.bindings[i].audio_jack){
+						$("#audio_jack").contents().remove();
+						string_value = "<span style='color:#000'><b>Audio Jack : </b></span>"
+						$('#audio_jack').html(string_value + result.results.bindings[i].audio_jack.value);
+					}
+					//battery
+					if(result.results.bindings[i].battery){
+						$("#battery").contents().remove();
+						string_value = "<span style='color:#000'><b>Battery : </b></span>"
+						$('#battery').html(string_value + result.results.bindings[i].battery.value);
+					}
+					//model_uri
+					if(result.results.bindings[i].model_uri){
+						$("#model_uri").contents().remove();
+						string_value = "<span style='color:#000'><b>Model URI : </b></span>"
+						$('#model_uri').html(string_value + result.results.bindings[i].model_uri.value);
+					}
+					//os
+					if(result.results.bindings[i].os){
+						$("#os").contents().remove();
+						string_value = "<span style='color:#000'><b>OS : </b></span>"
+						$('#os').html(string_value + result.results.bindings[i].os.value);
+					}
+					//primary_camera
+					if(result.results.bindings[i].primary_camera){
+						$("#primary_camera").contents().remove();
+						string_value = "<span style='color:#000'><b>Primary Camera : </b></span>"
+						$('#primary_camera').html(string_value + result.results.bindings[i].primary_camera.value);
+					}
+					//rating
+					if(result.results.bindings[i].rating){
+						$("#rating").contents().remove();
+						string_value = "<span style='color:#000'><b>Rating : </b></span>"
+						$('#rating').html(string_value + result.results.bindings[i].rating.value);
+					}
+					//screen_size
+					if(result.results.bindings[i].screen_size){
+						$("#screen_size").contents().remove();
+						string_value = "<span style='color:#000'><b>Screen Size : </b></span>"
+						$('#screen_size').html(string_value + result.results.bindings[i].screen_size.value);
+					}
+					//sim
+					if(result.results.bindings[i].sim){
+						$("#sim").contents().remove();
+						string_value = "<span style='color:#000'><b>SIM : </b></span>"
+						$('#sim').html(string_value + result.results.bindings[i].sim.value);
+					}
+					//weight
+					if(result.results.bindings[i].weight){
+						$("#weight").contents().remove();
+						string_value = "<span style='color:#000'><b>Weight : </b></span>"
+						$('#weight').html(string_value + result.results.bindings[i].weight.value);
+					}
+
+					//brand_uri
+					if(result.results.bindings[i].brand_uri){
+						$("#brand_uri").contents().remove();
+						string_value = "<span style='color:#000'><b>Brand URI : </b></span>"
+						$('#brand_uri').html(string_value + result.results.bindings[i].brand_uri.value);
+					}
+					//type
+					if(result.results.bindings[i].type){
+						$("#type").contents().remove();
+						string_value = "<span style='color:#000'><b>Type of Company : </b></span>"
+						$('#type').html(string_value + result.results.bindings[i].type.value);
+					}
+					//website
+					if(result.results.bindings[i].website){
+						$("#website").contents().remove();
+						string_value = "<span style='color:#000'><b>WebSie URL : </b></span>"
+						$('#website').html(string_value + result.results.bindings[i].website.value);
+					}
+					//employee_count
+					if(result.results.bindings[i].employee_count){
+						$("#employee_count").contents().remove();
+						string_value = "<span style='color:#000'><b>Number of Employees : </b></span>"
+						$('#employee_count').html(string_value + result.results.bindings[i].employee_count.value);
+					}
+					//founded
+					if(result.results.bindings[i].founded){
+						$("#founded").contents().remove();
+						string_value = "<span style='color:#000'><b>Founded : </b></span>"
+						$('#founded').html(string_value + result.results.bindings[i].founded.value);
+					}
+					
+					//Revenue
+					//profit_2014
+					if(result.results.bindings[i].profit_2014){
+						$("#profit_2014").contents().remove();
+						string_value = "<span style='color:#000'><b>Profits in 2014 : </b></span>"
+						$('#profit_2014').html(string_value + result.results.bindings[i].profit_2014.value);
+					}
+					//profit_2015
+					if(result.results.bindings[i].profit_2015){
+						$("#profit_2015").contents().remove();
+						string_value = "<span style='color:#000'><b>Profits in 2015 : </b></span>"
+						$('#profit_2015').html(string_value + result.results.bindings[i].profit_2015.value);
+					}
+					//profit_2016
+					if(result.results.bindings[i].profit_2016){
+						$("#profit_2016").contents().remove();
+						string_value = "<span style='color:#000'><b>Profits in 2016 : </b></span>"
+						$('#profit_2016').html(string_value + result.results.bindings[i].profit_2016.value);
+					}
+
+					//comments
+					if(result.results.bindings[i].comment_string){
+						string_value = "<span style='color:#000'><b>" + comment_count + "</b></span>"
+						comment_value = comment_value + string_value +". " + result.results.bindings[i].comment_string.value + "<br>"
+						comment_count = comment_count + 1;
+					}
+                }
+
+				$("#comments").contents().remove();
+				$('#comments').html(comment_value);
+
+				$("#myModal").modal('show');
+				
+            }).fail(function (e) {
+                console.log(e);
+            })
+        }
+
+// Q4
+        //Available worldwide phone with android OS and weight less than some value X, X is a parameter here
+        // for the return please look into the query sheet query 2
+        // Returns a list of objects with the return objects as in the query sheet select statement
+        //Here weight should be the box to be entered
+        function weightLessPhoneWithAndroidOS(weight = 60){
+            var SPARQL_ENDPOINT = 'http://localhost:3030/ds4/query';
+            var query = "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
+                        "PREFIX owl: <http://www.w3.org/2002/07/owl#> " +
+                        "PREFIX cellphone: <http://www.usc.org/dbi/cellphone#>" +
+                        "SELECT DISTINCT ?brand_name ?model_name ?employee_count ?weight ?image_url " +
+                        "WHERE { " +
+                        "?brand_uri cellphone:areas_served \"Worldwide\" . " +
+                        "?brand_uri cellphone:brand_name ?brand_name . " +
+                        "?brand_uri cellphone:employee_count ?employee_count ." +
+                        "?model_uri  cellphone:has_brand ?brand_uri ." +
+                        "?model_uri cellphone:model_name ?model_name ." +
+                        "?model_uri cellphone:image ?image_url ." + 
+                        "?model_uri cellphone:os ?os. " + 
+                        "?model_uri cellphone:weight ?weight." +
+                        "FILTER (regex(?os, \"^Android\", \"i\") && ?employee_count >= 100000 && ?weight > 10 && ?weight <" + weight + ")" +
+                        "} ORDER BY ASC(?weight)";
+            $.ajax({
+                url: SPARQL_ENDPOINT
+                , method: 'post'
+                , data: { query: query}
+            }).done(function (result) {
+                console.log(result);
+
+                var ar = [];
+
+				var heading_value = "Phones with weights less than " + weight;
+				$('#modal_header_value_weight_check').html(heading_value);
+
+				$("#myTable tr").remove();
+
+				var tbody = $('#myTable').children('tbody');
+
+				//Then if no tbody just select your table 
+				var table = tbody.length ? tbody : $('#myTable');
+
+				table.append('<tr><th>Brand Name</th><th>Model Name</th><th>Employees</th><th>Weight</th><th>Image</th></tr>');
+
+                for(var i=0; i<result.results.bindings.length; i++) {
+                    // var ob = {};
+                    // // ob.x = result.results.bindings[i].weight.value;
+                    // ob.y = result.results.bindings[i].weight.value;
+                    // // ob.x = result.results.bindings[i].brand_name.value + " " + result.results.bindings[i].model_name.value;
+                    // // if(!containsObject(ob, ar))
+                    // ar.push(ob);
+
+                   
+
+					var tbody = $('#myTable').children('tbody');
+
+					//Then if no tbody just select your table 
+					var table = tbody.length ? tbody : $('#myTable');
+
+					var brand_name = result.results.bindings[i].brand_name.value
+					var model_name = result.results.bindings[i].model_name.value
+					var imageUrl = result.results.bindings[i].image_url.value
+					var employee_count = result.results.bindings[i].employee_count.value
+					var weight_1 = result.results.bindings[i].weight.value
+
+					brand_name = '<td>' + brand_name + '</td>';
+					model_name = '<td>' + model_name + '</td>';
+					imageUrl = '<td><img src="' + imageUrl + '"></td>';
+					employee_count = '<td>' + employee_count + '</td>';
+					weight_1 = '<td>' + weight_1 + '</td>';
+
+
+					//Add row
+					table.append('<tr>'+brand_name + model_name + employee_count + weight_1 +  imageUrl  +'</tr>');
+                }
+
+				$("#myModal_weightless_phones").modal('show');
+                
+            }).fail(function (e) {
+                console.log(e);
+            })
+        }
+
+// Q5
+        //function to return all cellphones which has bigger screen and good rating
+        // for the return please look into the query sheet query 1
+        // Returns a list of objects with the return objects as in the query sheet select statement
+        //Here the screen size should be the box to be enetered
+        function getLargeSizeGoodPhones(screen_size = 6) {
+            //document.getElementById("demo").style.fontSize = "25px";
+            //document.getElementById("demo").style.color = "red";
+            //document.getElementById("demo").style.backgroundColor = "yellow";
+            var SPARQL_ENDPOINT = 'http://localhost:3030/ds4/query';
+            var query = "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
+                        "PREFIX owl: <http://www.w3.org/2002/07/owl#> " +
+                        "PREFIX cellphone: <http://www.usc.org/dbi/cellphone#>" +
+                        "SELECT ?brand_uri ?model_name ?brand_name ?average ?screen_size ?image_url " +
+                        "WHERE {  ?model_uri cellphone:has_brand ?brand_uri . " +
+                        "?model_uri cellphone:image ?image_url . " +
+                        "?model_uri cellphone:model_name ?model_name ." +
+                        "?brand_uri cellphone:brand_name ?brand_name . " +
+                        "?model_uri cellphone:screen_size ?screen_size ." +
+                        "FILTER (?average >= 4 && ?screen_size >"+ screen_size + ")" +
+                        "{" +
+                           "SELECT ?model_uri (AVG(?rating) as ?average)" + 
+                           "WHERE {" + 
+                           "?comment_uri cellphone:has_model ?model_uri ." +
+                           "?comment_uri cellphone:comment_rating ?rating" +
+                           "} GROUP BY ?model_uri" + 
+                        "}" +
+                        "}";
+            $.ajax({
+                url: SPARQL_ENDPOINT
+                , method: 'post'
+                , data: { query: query}
+            }).done(function (result) {
+                console.log(result);
+				//adarsh here is query5 copy from query 4
+				 //myModal_screensize_phones id
+				 //modal_header_value_screensize header id
+				 $("#weight_table tr").remove();
+
+				var tbody = $('#weight_table').children('tbody');
+
+				//Then if no tbody just select your table 
+				var table = tbody.length ? tbody : $('#weight_table');
+
+				table.append('<tr><th>Brand Name</th><th>Model Name</th><th>Screen Size</th><th>Average Rating</th><th>Image</th></tr>');
+
+				 for(var i=0; i<result.results.bindings.length; i++) {
+                    // var ob = {};
+                    // // ob.x = result.results.bindings[i].weight.value;
+                    // ob.y = result.results.bindings[i].weight.value;
+                    // // ob.x = result.results.bindings[i].brand_name.value + " " + result.results.bindings[i].model_name.value;
+                    // // if(!containsObject(ob, ar))
+                    // ar.push(ob);
+
+                   
+
+					var tbody = $('#weight_table').children('tbody');
+
+					//Then if no tbody just select your table 
+					var table = tbody.length ? tbody : $('#weight_table');
+
+					var brand_name = result.results.bindings[i].brand_name.value
+					var model_name = result.results.bindings[i].model_name.value
+					var imageUrl = result.results.bindings[i].image_url.value
+					var rating_average = result.results.bindings[i].average.value
+					var screen_size = result.results.bindings[i].screen_size.value
+
+					brand_name = '<td>' + brand_name + '</td>';
+					model_name = '<td>' + model_name + '</td>';
+					imageUrl = '<td><img src="' + imageUrl + '"></td>';
+					rating_average = '<td>' + rating_average + '</td>';
+					screen_size = '<td>' + screen_size + '</td>';
+
+
+					//Add row
+					table.append('<tr>'+brand_name + model_name + screen_size + rating_average + imageUrl  +'</tr>');
+                }
+
+				$("#myModal_screensize_phones").modal('show');
+
+            }).fail(function (e) {
+                console.log(e);
+            })
+        }
+
+		$("#header_title1").on('click',function(){
+			$("#bgvid").css("opacity", 1);
+			$("#bgvid").get(0).muted = false;
+			$("#page2").animate({ top: '100%' });
+			$("#page3").animate({ top: '100%' });
+			$("#page4").animate({ top: '100%' });
+
+			$("#header_title4").css("color","white");
+			$("#header_title5").css("color","white");
+			$("#header_title6").css("color", "white");
+		});
+		$("#header_title2").on('click',function(){
+			$("#bgvid").css("opacity", 1);
+			$("#bgvid").get(0).muted = false;
+			$("#page2").animate({ top: '100%' });
+			$("#page3").animate({ top: '100%' });
+			$("#page4").animate({ top: '100%' });
+
+			$("#header_title4").css("color","white");
+			$("#header_title5").css("color","white");
+			$("#header_title6").css("color", "white");
+		});
+		$("#header_title3").on('click',function(){
+			$("#bgvid").css("opacity", 0.3);
+			$("#bgvid").get(0).muted = true;
+			$("#page2").animate({ top: '100%' });
+			$("#page3").animate({ top: '100%' });
+			$("#page4").animate({ top: '100%' });
+
+			$("#header_title4").css("color","white");
+			$("#header_title5").css("color","white");
+			$("#header_title6").css("color", "white");
+
+			$("#p26").hide();
+			$("#p27").hide();
+			$("#p28").hide();
+			$("#p29").hide();
+			$("#p30").hide();
+		});
+		$("#header_title4").on('click',function(){
+			$("#bgvid").css("opacity", 0.3);
+			$("#bgvid").get(0).muted = true;
+			$("#page2").animate({ top: '81px' });
+			$("#page3").animate({ top: '100%' });
+			$("#page4").animate({ top: '100%' });
+
+			$("#header_title4").css("color","#ec7741");
+			$("#header_title5").css("color","white");
+			$("#header_title6").css("color", "white");
+
+			$("#message").show();
+			$("#p26").hide();
+			$("#p27").hide();
+			$("#p28").hide();
+			$("#p29").hide();
+			$("#p30").hide();
+		});
+		$("#header_title5").on('click',function(){
+			$("#bgvid").css("opacity", 0.3);
+			$("#bgvid").get(0).muted = true;
+			$("#page2").animate({ top: '100%' });
+			$("#page3").animate({ top: '81px' });
+			$("#page4").animate({ top: '100%' });
+
+			$("#header_title4").css("color","white");
+			$("#header_title5").css("color","#ec7741");
+			$("#header_title6").css("color", "white");
+			$("#p26").hide();
+			$("#p27").hide();
+			$("#p28").hide();
+			$("#p29").hide();
+			$("#p30").hide();
+		});
+		$("#header_title6").on('click',function(){
+			$("#bgvid").css("opacity", 0.3);
+			$("#bgvid").get(0).muted = true;
+			$("#page2").animate({ top: '100%' });
+			$("#page3").animate({ top: '100%' });
+			$("#page4").animate({ top: '81px' });
+
+			$("#header_title4").css("color","white");
+			$("#header_title5").css("color","white");
+			$("#header_title6").css("color", "#ec7741");
+		});
+
+		// $("#header1").animate({ top: '-81px' });
+
+		$("#p21").on('click', function() {
+			$("#p21").css("background", "#f04442");
+			$("#p22").css("background", "black");
+			$("#p23").css("background", "black");
+			$("#p24").css("background", "black");
+			$("#p25").css("background", "black");
+			$("#message").hide();
+
+			// $("#p26221").text(query1);
+
+			$("#p26").show();
+			$("#p27").hide();
+			$("#p28").hide();
+			$("#p29").hide();
+			$("#p30").hide();
+		});
+
+        $("#q12").on('click', function() {
+            if($("#q11").val() != "")
+                getTop10ModelsWithHighestUserRating(parseInt($("#q11").val()));
+            else
+                getTop10ModelsWithHighestUserRating(15);
+        });
+
+
+		$("#p22").on('click', function() {
+			$("#p21").css("background", "black");
+			$("#p22").css("background", "#f04442");
+			$("#p23").css("background", "black");
+			$("#p24").css("background", "black");
+			$("#p25").css("background", "black");
+			$("#message").hide();
+
+			$("#p26").hide();
+			$("#p27").show();
+			$("#p28").hide();
+			$("#p29").hide();
+			$("#p30").hide();
+		});
+
+        $("#q14").on('click', function() {
+            if($("#q13").val() != "")
+                getTop5BrandsBasedOnRevenue(parseInt($("#q13").val()));
+            else
+                getTop5BrandsBasedOnRevenue(5);
+        });
+
+
+		$("#p23").on('click', function() {
+			$("#p21").css("background", "black");
+			$("#p22").css("background", "black");
+			$("#p23").css("background", "#f04442");
+			$("#p24").css("background", "black");
+			$("#p25").css("background", "black");
+			$("#message").hide();
+
+			$("#p26").hide();
+			$("#p27").hide();
+			$("#p28").show();
+			$("#p29").hide();
+			$("#p30").hide();
+		});
+
+		$("#p24").on('click', function() {
+            // 35-998
+			//weightLessPhoneWithAndroidOS(2000);
+			$("#p21").css("background", "black");
+			$("#p22").css("background", "black");
+			$("#p23").css("background", "black");
+			$("#p24").css("background", "#f04442");
+			$("#p25").css("background", "black");
+			$("#message").hide();
+
+			$("#p26").hide();
+			$("#p27").hide();
+			$("#p28").hide();
+			$("#p29").show();
+			$("#p30").hide();
+		});
+
+		$("#p25").on('click', function() {
+			//getLargeSizeGoodPhones();
+			$("#p21").css("background", "black");
+			$("#p22").css("background", "black");
+			$("#p23").css("background", "black");
+			$("#p24").css("background", "black");
+			$("#p25").css("background", "#f04442");
+			$("#message").hide();
+
+			$("#p26").hide();
+			$("#p27").hide();
+			$("#p28").hide();
+			$("#p29").hide();
+			$("#p30").show();
+		}); 
+
+		//click for the third query
+		$("#query_3_search").on('click', function() {
+			console.log($("#query_3_brand_name").val());
+			console.log($("#query_3_model_name").val());
+			if($("#query_3_brand_name").val() != "" && $("#query_3_model_name").val() != ""){
+				getDetailsGivenModelNameAndBrandName( $("#query_3_model_name").val(),  $("#query_3_brand_name").val());
+			}else{
+				getDetailsGivenModelNameAndBrandName();
+			}
+			
+		}); 
+
+		//click for the fourth query
+		$("#query_4_search").on('click', function() {
+			console.log($("#query_4_weight").val());
+			if($("#query_4_weight").val() != ""){
+				weightLessPhoneWithAndroidOS(parseInt($("#query_4_weight").val()));
+			}else{
+				weightLessPhoneWithAndroidOS();
+			}
+		}); 
+
+		//click for the fourth query
+		$("#query_5_search").on('click', function() {
+			console.log($("#query_5_screensize").val());
+			if($("#query_5_screensize").val() != ""){
+				getLargeSizeGoodPhones(parseInt($("#query_5_screensize").val()));
+			}else{
+				getLargeSizeGoodPhones();
+			}
+		}); 
+		
+
+        // $( "#slider1" ).bind( "change", function(event, ui) {
+        //     $("#slider1").val();
+        //     weightLessPhoneWithAndroidOS(parseInt($("#slider1").val()));
+        // });
+	});
+	</script>
+</head>
+<body>
+	<div data-role="page" class="jqm-demos jqm-home" style="overflow:hidden;max-height: 100%;">
+
+		<div id="video">
+			<video poster="https://s3-us-west-2.amazonaws.com/s.cdpn.io/4273/polina.jpg" id="bgvid" playsinline autoplay loop>
+			<source src="videos/iPhone.mp4" type="video/webm">
+		</video>
+		</div>
+
+		<div id="header1"></div>
+		<p id="header_title1">CELL</p>
+		<p id="header_title2">PHONE</p>
+		<p id="header_title3">MART</p>
+
+		<p id="header_title4">SEARCH</p>
+		<!-- <p id="header_title5">STATS</p> -->
+		<p id="header_title6">TEAM</p>
+
+		<div id="page2">
+			<div id="p2">
+				<div style="padding-top: 30%"></div>
+				<div id="p21" class="divider">
+					<p id="p211" class="quer">Query #1</p>
+				</div>
+				<div id="p22" class="divider">
+					<p id="p212" class="quer">Query #2</p>
+				</div>
+				<div id="p23" class="divider">
+					<p id="p213" class="quer">Query #3</p>
+				</div>
+				<div id="p24" class="divider">
+					<p id="p214" class="quer">Query #4</p>
+				</div>
+				<div id="p25" class="divider">
+					<p id="p215" class="quer">Query #5</p>
+				</div>
+			</div>
+
+			<p id="message">Please select a query from the left panel</p>
+
+
+			<!-- First Query's result-->
+			<div id="p26" class="queryPanel">
+				<div class="col1">
+					<!-- Query Text Area -->
+					<div id="p261" class="aim_box">
+						<div id="p2611" class="aim_title">
+							<p id="p26111">Aim</p>
+						</div>
+						<div id="p2612" class="aim_content">
+							<p id="p26121">Get revenue of top N Models with highest user rating</p>
+						</div>
+					</div>
+					<!-- SPARQL Query Area -->
+					<div id="p262" class="aim_box">
+						<div id="p2621" class="aim_title">
+							<p id="p26211">SPARQL Query</p>
+						</div>
+						<div id="p2622" class="query_response_content">
+							<p id="p26221">
+								PREFIX rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt; <br>
+								PREFIX owl: &lt;http://www.w3.org/2002/07/owl#&gt; <br>
+								PREFIX cellphone: &lt;http://www.usc.org/dbi/cellphone#&gt; <br>
+								SELECT  ?brand_name ?model_name ?average ?profit_2016 <br>
+								WHERE { { <br>
+										?brand_uri cellphone:brand_name ?brand_name .   <br> 
+										?model_uri cellphone:model_name ?model_name . <br>
+										?model_uri cellphone:has_brand ?brand_uri .  <br>
+										?revenue_uri cellphone:profit_has_model ?model_uri . <br>
+										?revenue_uri cellphone:profit_2016 ?profit_2016. <br>
+                                        {   SELECT ?model_uri (AVG(?rating) as ?average) (COUNT(?rating) as ?count) <br>
+                                            WHERE { <br>
+                                                ?comment_uri cellphone:has_model ?model_uri . <br>
+                                                ?comment_uri cellphone:comment_rating ?rating . <br>
+                                                } GROUP BY ?model_uri  <br>
+                                                HAVING (?count > 700)  <br>
+                                                ORDER BY DESC (?average)  <br>
+                                                LIMIT 15 <br>
+                                        } } } 
+
+							</p>
+						</div>
+					</div>
+				</div>
+				<div class="col2">
+					<!-- SPARQL Response Area -->
+					<div id="p263" class="query_response_box">
+						<div id="p2631" class="aim_title">
+							<p id="p26311">Submit Query</p>
+						</div>
+						<div id="p2632" class="query_response_content">
+                            <div id="p26321">
+                                <input type="text" name="name" id="q11" value="" placeholder="Number of models"/>
+                                <input type="button" value="Search" id="q12"/>
+                            </div>
+						</div>
+					</div>
+					<!-- Graph Area -->
+					<div id="p264" class="query_response_box">
+						<div id="p2641" class="aim_title">
+							<p id="p26411">Visual Response</p>
+						</div>
+						<div id="p2642" class="query_response_content">
+							<div id="chartContainer" style="height: 370px; width: 100%;"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			
+			<!-- Second Query's result-->
+			<div id="p27" class="queryPanel">
+				<div class="col1">
+					<!-- Query Text Area -->
+					<div id="p271" class="aim_box">
+						<div id="p2711" class="aim_title">
+							<p id="p27111">Aim</p>
+						</div>
+						<div id="p2712" class="aim_content">
+							<p id="p27121">Get top N Brand names based on Revenue</p>
+						</div>
+					</div>
+					<!-- SPARQL Query Area -->
+					<div id="p272" class="aim_box">
+						<div id="p2721" class="aim_title">
+							<p id="p27211">SPARQL Query</p>
+						</div>
+						<div id="p2722" class="query_response_content">
+							<p id="p27221">
+
+								PREFIX rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt; <br>
+                        PREFIX owl: &lt;http://www.w3.org/2002/07/owl#&gt; <br>
+                        PREFIX cellphone: &lt;http://www.usc.org/dbi/cellphone#&gt; <br>
+                        SELECT ?brand_name (SUM(?profits) as ?revenew) ?area_served ?employee_count ?founded  <br>?head_quarters ?type ?website ?brand_uri  <br>
+                            WHERE { <br>
+           			            ?brand_uri cellphone:areas_served ?area_served . <br>
+                                ?brand_uri cellphone:employee_count ?employee_count . <br>
+                                ?brand_uri cellphone:founded ?founded . <br>
+                                ?brand_uri cellphone:head_quarters ?head_quarters . <br>
+                                ?brand_uri cellphone:type ?type . <br>
+                                ?brand_uri cellphone:website ?website . <br>
+                                ?model_uri  cellphone:has_brand ?brand_uri . <br>
+                                ?brand_uri  cellphone:brand_name ?brand_name .  <br>
+                                ?model_uri  cellphone:model_name ?model_name . <br>
+    				                { 
+                                        SELECT ?model_uri ?profits  <br>
+                                        WHERE { ?profit_uri cellphone:profit_has_model ?model_uri .  <br>
+                                                ?profit_uri cellphone:profit_2014 ?profits . <br>
+                                                }
+                                    } <br>
+			            } GROUP BY ?brand_uri ?area_served ?employee_count ?founded ?head_quarters ?type ?website  <br>?brand_name ORDER BY DESC (?revenew) LIMIT 5 <br>
+								
+
+							</p>
+						</div>
+					</div>
+				</div>
+				<div class="col2">
+					<!-- SPARQL Response Area -->
+					<div id="p273" class="query_response_box">
+						<div id="p2731" class="aim_title">
+							<p id="p27311">Submit Query</p>
+						</div>
+						<div id="p2732" class="query_response_content">
+							<div id="p27321">
+                                <input type="text" name="name" id="q13" value="" placeholder="Number of companies"/>
+                                <input type="button" value="Search" id="q14"/>
+                            </div>
+						</div>
+					</div>
+					<!-- Graph Area -->
+					<div id="p274" class="query_response_box">
+						<div id="p2741" class="aim_title">
+							<p id="p27411">Visual Response</p>
+						</div>
+						<div id="p2742" class="query_response_content">
+							<div id="chartContainer2" style="height: 370px; width: 100%;"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+
+			<!-- Third Query's result-->
+			<div id="p28" class="queryPanel">
+				<div class="col1">
+					<!-- Query Text Area -->
+					<div id="p281" class="aim_box">
+						<div id="p2811" class="aim_title">
+							<p id="p28111">Aim</p>
+						</div>
+						<div id="p2812" class="aim_content">
+							<p id="p28121">Get all details of the cell phone using Brand and Model name</p>
+						</div>
+					</div>
+					<!-- SPARQL Query Area -->
+					<div id="p282" class="aim_box">
+						<div id="p2821" class="aim_title">
+							<p id="p28211">SPARQL Query</p>
+						</div>
+						<div id="p2822" class="query_response_content">
+							<p id="p28221">
+
+								PREFIX rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt; <br>
+                        PREFIX owl: &lt;http://www.w3.org/2002/07/owl#&gt;  <br>
+                        PREFIX cellphone: &lt;http://www.usc.org/dbi/cellphone#&gt; <br>
+                        SELECT DISTINCT ?employee_count ?founded ?type ?website ?brand_uri ?model_name ?CPU ?EDGE ?GPRS  <br>?RAM ?audio_jack ?battery <br>
+                        ?image ?primary_camera ?rating ?screen_size ?sim ?os  ?weight ?model_uri ?profit_2014  <br> ?profit_2015 ?profit_2016 ?comment_string  <br>
+                        WHERE {  <br>
+                         { 
+                            ?brand_uri cellphone:brand_name \"" + BrandName + "\" .  <br>
+                            ?brand_uri cellphone:areas_served ?area_served . <br>
+                            ?brand_uri cellphone:employee_count ?employee_count . <br>
+                            ?brand_uri cellphone:founded ?founded . <br>
+                            ?brand_uri cellphone:head_quarters ?head_quarters . <br>
+                            ?brand_uri cellphone:type ?type . <br>
+                            ?brand_uri cellphone:website ?website . <br>
+                            ?model_uri  cellphone:has_brand ?brand_uri . <br>
+                            ?model_uri cellphone:model_name \"" + modelName + "\" . <br>
+                            ?model_uri cellphone:CPU ?CPU . <br>
+                            ?model_uri cellphone:EDGE ?EDGE . <br>
+                            ?model_uri cellphone:GPRS ?GPRS . <br>
+                            ?model_uri cellphone:RAM ?RAM . <br>
+                            ?model_uri cellphone:audio_jack ?audio_jack . <br>
+                            ?model_uri cellphone:battery ?battery .  <br>
+                            ?model_uri cellphone:image ?image .  <br>    
+                            ?model_uri cellphone:primary_camera ?primary_camera . <br>
+                            ?model_uri cellphone:rating ?rating . <br>
+                            ?model_uri cellphone:screen_size ?screen_size . <br>
+                            ?model_uri cellphone:sim ?sim .  <br>
+                            ?model_uri cellphone:os ?os.  <br>
+                            ?model_uri cellphone:weight ?weight. <br>
+                            ?profit_id cellphone:profit_has_model ?model_uri .  <br>
+                            ?profit_id cellphone:profit_2014 ?profit_2014 . <br>
+                            ?profit_id cellphone:profit_2015 ?profit_2015 . <br>
+                            ?profit_id cellphone:profit_2016 ?profit_2016 . <br>
+                         } 
+                            UNION  <br>
+                         {  
+                            ?brand_uri_1 cellphone:brand_name \"" + BrandName + "\" . <br>
+                            ?model_uri_1 cellphone:has_brand ?brand_uri_1 . <br>
+                            ?model_uri_1 cellphone:model_name \"" + modelName + "\". <br>
+                            ?comment_id cellphone:has_model ?model_uri_1 .  <br>
+                            ?comment_id cellphone:comment_string ?comment_string . <br>
+                         }
+                        }
+
+							</p>
+						</div>
+					</div>
+				</div>
+				<div class="col2">
+					<!-- SPARQL Response Area -->
+					<div id="p283" class="query_response_box">
+						<div id="p2831" class="aim_title">
+							<p id="p28311">Submit Query</p>
+						</div>
+						<div id="p2832" class="query_response_content">
+							<div id="p28321">
+                                <input type="text" name="name" id="query_3_brand_name" value="" placeholder="Brand Name"/>
+								<input type="text" name="name" id="query_3_model_name" value="" placeholder="Model Name"/>
+                                <input type="button" value="Search" id="query_3_search"/>
+                            </div>
+						</div>
+					</div>
+					<!-- Graph Area -->
+					<div id="p284" class="query_response_box">
+						<div id="p2841" class="aim_title">
+							<p id="p28411">Visual Response</p>
+						</div>
+						<div id="p2842" class="query_response_content">
+							<p id="p28421"></p>
+						</div>
+					</div>
+				</div>
+			</div>
+
+
+			<!-- Fourth Query's result-->
+			<div id="p29" class="queryPanel">
+				<div class="col1">
+					<!-- Query Text Area -->
+					<div id="p291" class="aim_box">
+						<div id="p2911" class="aim_title">
+							<p id="p29111">Aim</p>
+						</div>
+						<div id="p2912" class="aim_content">
+							<p id="p29121">Get all the phones manufactured by Reputed companies with android OS that weigh less than a given weight</p>
+						</div>
+					</div>
+					<!-- SPARQL Query Area -->
+					<div id="p292" class="aim_box">
+						<div id="p2921" class="aim_title">
+							<p id="p29211">SPARQL Query</p>
+						</div>
+						<div id="p2922" class="query_response_content">
+							<p id="p29221">
+
+								PREFIX rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt; <br>
+                        PREFIX owl: &lt;http://www.w3.org/2002/07/owl#&gt;  <br>
+                        PREFIX cellphone: &lt;http://www.usc.org/dbi/cellphone#&gt; <br>
+                        SELECT DISTINCT ?brand_name ?model_name ?employee_count ?weight ?image_url <br>
+                        WHERE {  <br>
+                        ?brand_uri cellphone:areas_served \"Worldwide\" .  <br>
+                        ?brand_uri cellphone:brand_name ?brand_name .  <br>
+                        ?brand_uri cellphone:employee_count ?employee_count . <br>
+                        ?model_uri  cellphone:has_brand ?brand_uri . <br>
+                        ?model_uri cellphone:model_name ?model_name . <br>
+                        ?model_uri cellphone:image ?image_url . <br>
+                        ?model_uri cellphone:os ?os.  <br>
+                        ?model_uri cellphone:weight ?weight. <br>
+                        FILTER (regex(?os, \"^Android\", \"i\") && ?employee_count >= 100000 && ?weight <" + weight + ") <br>
+                        } ORDER BY ASC(?weight)
+								
+							</p>
+						</div>
+					</div>
+				</div>
+				<div class="col2">
+					<!-- SPARQL Response Area -->
+					<div id="p293" class="query_response_box">
+						<div id="p2931" class="aim_title">
+							<p id="p29311">Submit Query</p>
+						</div>
+						<div id="p2932" class="query_response_content">
+							<div id="p2932567">
+                                <input type="text" name="name" id="query_4_weight" value="" placeholder="Weight"/>
+                                <input type="button" value="Search" id="query_4_search"/>
+                            </div>
+						</div>
+					</div>
+					<!-- Graph Area -->
+					<div id="p294" class="query_response_box">
+						<div id="p2941" class="aim_title">
+							<p id="p29411">Visual Response</p>
+						</div>
+						<div id="p2942" class="query_response_content">
+							<div id="chartContainer4" style="height: 370px; width: 100%;"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+			
+
+			<!-- Fifth Query's result-->
+			<div id="p30" class="queryPanel">
+				<div class="col1">
+					<!-- Query Text Area -->
+					<div id="p301" class="aim_box">
+						<div id="p3011" class="aim_title">
+							<p id="p30111">Aim</p>
+						</div>
+						<div id="p3012" class="aim_content">
+							<p id="p30121">Get all cellphones which have screen bigger than value X and a good rating</p>
+						</div>
+					</div>
+					<!-- SPARQL Query Area -->
+					<div id="p302" class="aim_box">
+						<div id="p3021" class="aim_title">
+							<p id="p30211">SPARQL Query</p>
+						</div>
+						<div id="p3022" class="query_response_content">
+							<p id="p30221">
+
+						PREFIX rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt; <br>
+                        PREFIX owl: &lt;http://www.w3.org/2002/07/owl#&gt;  <br>
+                        PREFIX cellphone: &lt;http://www.usc.org/dbi/cellphone#&gt; <br>
+                        SELECT ?brand_uri ?model_name ?brand_name ?average ?screen_size ?image_url <br>
+                        WHERE {  ?model_uri cellphone:has_brand ?brand_uri .  <br>
+                        ?model_uri cellphone:image ?image_url .  <br>
+                        ?model_uri cellphone:model_name ?model_name . <br>
+                        ?brand_uri cellphone:brand_name ?brand_name .  <br>
+                        ?model_uri cellphone:screen_size ?screen_size . <br>
+                        FILTER (?average >= 4 && ?screen_size >"+ screen_size + ") <br>
+                        { <br>
+                           SELECT ?model_uri (AVG(?rating) as ?average) <br> 
+                           WHERE { <br>
+                           ?comment_uri cellphone:has_model ?model_uri . <br>
+                           ?comment_uri cellphone:comment_rating ?rating <br>
+                           } GROUP BY ?model_uri <br>
+                        } }
+								
+
+							</p>
+						</div>
+					</div>
+				</div>
+				<div class="col2">
+					<!-- SPARQL Response Area -->
+					<div id="p303" class="query_response_box">
+						<div id="p3031" class="aim_title">
+							<p id="p30311">Submit Query</p>
+						</div>
+						<div id="p3032" class="query_response_content">
+							<div id="p30321">
+                                <input type="text" name="name" id="query_5_screensize" value="" placeholder="Screen size"/>
+                                <input type="button" value="Search" id="query_5_search"/>
+                            </div>
+						</div>
+					</div>
+					<!-- Graph Area -->
+					<div id="p304" class="query_response_box">
+						<div id="p3041" class="aim_title">
+							<p id="p30411">Visual Response</p>
+						</div>
+						<div id="p3042" class="query_response_content">
+							<p id="p30421"></p>
+						</div>
+					</div>
+				</div>
+			</div>
+
+
+		</div>
+		<div id="page3">
+			<p id="p21">page 3</p>
+		</div>
+		<div id="page4">
+			<div id="box1">
+				<img src="photos/adarsh.jpg" style="border-radius: 50%;width: 100%;">
+				<p id="p41" class="profiles names">Adarsh</p>
+				<p id="p42" class="profiles uscid">USC ID: 7090 219 784</p>
+			</div>
+
+			<div id="box2">
+				<img src="photos/sahil.jpg" style="border-radius: 50%;width: 100%;">
+				<p id="p43" class="profiles names">Sahil</p>
+				<p id="p44" class="profiles uscid">USC ID: 2390 345 642</p>
+			</div>
+
+			<div id="box3">
+				<img src="photos/malatesha.jpg" style="border-radius: 50%;width: 100%;">
+				<p id="p45" class="profiles names">Malatesha</p>
+				<p id="p46" class="profiles uscid">USC ID: 8133 120 542</p>
+			</div>
+
+			<div id="box4">
+				<img src="photos/neelima.jpg" style="border-radius: 50%;width: 100%;">
+				<p id="p47" class="profiles names">Neelima</p>
+				<p id="p48" class="profiles uscid">USC ID: 4806 046 524</p>
+			</div>
+		</div>
+
+	</div>
+
+	<!-- Modal -->
+  <div class="modal fade" id="myModal" role="dialog" style="width: 1500px;">
+    <div class="modal-dialog" style="width: 1200px; margin:30px" >
+    
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title" id ="modal_header_value">Modal Header</h4>
+        </div>
+        <div class="modal-body">
+		  	<img id ="image" src="https://image.freepik.com/free-vector/isolated-mobile-phone-background_1132-137.jpg" alt="Image not found">
+			
+			 <!--Features-->
+			<div class="modal_feature_header"> Features </div> 
+			<div id="EDGE"></div>
+			<div id="GPRS"></div>
+			<div id="RAM"></div>
+			<div id="audio_jack"></div>
+			<div id="battery"></div>
+			<div id="os"></div>
+			<div id="primary_camera"></div>
+			<div id="rating"></div>
+			<div id="screen_size"></div>
+			<div id="sim"></div>
+			<div id="weight"></div>
+			<div id="model_uri"></div>
+
+            <!--Brand Details-->
+			<div class="modal_feature_header"> Brand Details </div> 
+			<div id="brand_uri"></div>
+			<div id="employee_count"></div>
+			<div id="founded"></div>
+			<div id="type"></div>
+			<div id="website"></div>
+
+			<!--//Revenue Details-->
+			<div class="modal_feature_header"> Revenue Details </div> 
+			<div id="profit_2014"></div>
+			<div id="profit_2015"></div>
+			<div id="profit_2016"></div>
+
+			<!--//Comments-->
+			<div class="modal_feature_header"> Comments </div>
+			<div id="comments"></div>
+
+        </div>
+        <!--<div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>-->
+      </div>
+      
+    </div>
+  </div>
+
+  <!--Modal for weightless phones-->
+  <div class="modal fade" id="myModal_weightless_phones" role="dialog" style="width: 1500px;">
+    <div class="modal-dialog" style="width: 1200px; margin:30px" >
+    
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title" id ="modal_header_value_weight_check"></h4>
+        </div>
+        <div class="modal-body">
+		     <div class="container">
+					<table class="table" id="myTable">
+						<thead>
+						<tr>
+							<th>Brand Name</th>
+							<th>Model Name</th>
+							<th>Employees</th>
+							<th>Weight</th>
+							<th>Image</th>
+						</tr>
+						</thead>
+						<tbody>
+						
+						</tbody>
+					</table>
+        </div>
+        <!--<div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>-->
+      </div>
+      
+    </div>
+  </div> 
+</div>
+
+
+  <!--Modal for screen size less than X phones-->
+  <div class="modal fade" id="myModal_screensize_phones" role="dialog" style="width: 1500px;">
+    <div class="modal-dialog" style="width: 1200px; margin:30px" >
+    
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title" id ="modal_header_value_screensize"></h4>
+        </div>
+        <div class="modal-body">
+		     <div class="container">
+					<table class="table" id="weight_table">
+						<thead>
+						<tr>
+							<th>Brand Name</th>
+							<th>Model Name</th>
+							<th>Screen Size</th>
+							<th>Average Rating</th>
+							<th>Image</th>
+						</tr>
+						</thead>
+						<tbody>
+						
+						</tbody>
+					</table>
+        </div>
+        <!--<div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>-->
+      </div>
+      
+    </div>
+  </div> 
+</div>
+</body>
+</html>

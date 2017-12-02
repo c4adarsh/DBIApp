@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+</head>
+
+<body>
+    <h1>Project DBI Cellphone</h1>
+    <p id="demo">Please make the UI for these queries, You can keep the dropdown or text box for filling the arguments, 
+        i.e function parameters. Please see the function for function parameters</p>
+    <script>
+
+        //function to return all cellphones which has bigger screen and good rating
+        // for the return please look into the query sheet query 1
+        // Returns a list of objects with the return objects as in the query sheet select statement
+        //Here the screen size should be the box to be enetered
+        function getLargeSizeGoodPhones(screen_size = 6) {
+            //document.getElementById("demo").style.fontSize = "25px";
+            //document.getElementById("demo").style.color = "red";
+            //document.getElementById("demo").style.backgroundColor = "yellow";
+            var SPARQL_ENDPOINT = 'http://localhost:3030/ds4/query';
+            var query = "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
+                        "PREFIX owl: <http://www.w3.org/2002/07/owl#> " +
+                        "PREFIX cellphone: <http://www.usc.org/dbi/cellphone#>" +
+                        "SELECT ?brand_uri ?model_name ?brand_name ?average ?screen_size ?image_url" +
+                        "WHERE {  ?model_uri cellphone:has_brand ?brand_uri . " +
+                        "?model_uri cellphone:image ?image_url . " +
+                        "?model_uri cellphone:model_name ?model_name ." +
+                        "?brand_uri cellphone:brand_name ?brand_name . " +
+                        "?model_uri cellphone:screen_size ?screen_size ." +
+                        "FILTER (?average >= 4 && ?screen_size >"+ screen_size + ")" +
+                        "{" +
+                           "SELECT ?model_uri (AVG(?rating) as ?average)" + 
+                           "WHERE {" + 
+                           "?comment_uri cellphone:has_model ?model_uri ." +
+                           "?comment_uri cellphone:comment_rating ?rating" +
+                           "} GROUP BY ?model_uri" + 
+                        "}" +
+                        "}";
+            $.ajax({
+                url: SPARQL_ENDPOINT
+                , method: 'post'
+                , data: { query: query}
+            }).done(function (result) {
+                console.log(result);
+            }).fail(function (e) {
+                console.log(e);
+            })
+        }
+
+        //Available worldwide phone with android OS and weight less than some value X, X is a parameter here
+        // for the return please look into the query sheet query 2
+        // Returns a list of objects with the return objects as in the query sheet select statement
+        //Here weight should be the box to be entered
+        function weightLessPhoneWithAndroidOS(weight = 60){
+            var SPARQL_ENDPOINT = 'http://localhost:3030/ds4/query';
+            var query = "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
+                        "PREFIX owl: <http://www.w3.org/2002/07/owl#> " +
+                        "PREFIX cellphone: <http://www.usc.org/dbi/cellphone#>" +
+                        "SELECT DISTINCT ?brand_name ?model_name ?employee_count ?weight ?image_url" +
+                        "WHERE { " +
+                        "?brand_uri cellphone:areas_served \"Worldwide\" . " +
+                        "?brand_uri cellphone:brand_name ?brand_name . " +
+                        "?brand_uri cellphone:employee_count ?employee_count ." +
+                        "?model_uri  cellphone:has_brand ?brand_uri ." +
+                        "?model_uri cellphone:model_name ?model_name ." +
+                        "?model_uri cellphone:image ?image_url ." + 
+                        "?model_uri cellphone:os ?os. " + 
+                        "?model_uri cellphone:weight ?weight." +
+                        "FILTER (regex(?os, \"^Android\", \"i\") && ?employee_count >= 100000 && ?weight <" + weight + ")" +
+                        "} ORDER BY ASC(?weight)";
+            $.ajax({
+                url: SPARQL_ENDPOINT
+                , method: 'post'
+                , data: { query: query}
+            }).done(function (result) {
+                console.log(result);
+            }).fail(function (e) {
+                console.log(e);
+            })
+        }
+
+        //It gives all the details of the cell phone
+        // 1. It returns 1 object with all the feature data and company data
+        // 2. It returns only comments
+        // Be careful, Data comes in an array in differnt chunks
+        // Please see the console .log where I have logged the output
+        // Please let me know if you have any doubt
+        // Things to display
+        // 1. Complete fetaure dataset, see the 355th object
+        //2. Comments
+        // there is a image URL
+        // Please make sure to show the image
+        // There should be 2 blank boxes or dropdowns 
+        //where in you can allow to select the model name and the brand name
+        // This is the query 3 in the query sheet
+        function getDetailsGivenModelNameAndBrandName(modelName = "Galaxy S6", BrandName = "Samsung"){
+            var SPARQL_ENDPOINT = 'http://localhost:3030/ds4/query';
+            var query = "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
+                        "PREFIX owl: <http://www.w3.org/2002/07/owl#> " +
+                        "PREFIX cellphone: <http://www.usc.org/dbi/cellphone#>" +
+                        "SELECT DISTINCT ?employee_count ?founded ?type ?website ?brand_uri ?model_name ?CPU ?EDGE ?GPRS ?RAM ?audio_jack ?battery" +
+                        "?image ?primary_camera ?rating ?screen_size ?sim ?os  ?weight ?model_uri ?profit_2014  ?profit_2015 ?profit_2016 ?comment_string "+
+                        "WHERE { " +
+                         "{"  + 
+                            "?brand_uri cellphone:brand_name \"" + BrandName + "\" . " +
+                            "?brand_uri cellphone:areas_served ?area_served ." +
+                            "?brand_uri cellphone:employee_count ?employee_count ."+
+                            "?brand_uri cellphone:founded ?founded ." +
+                            "?brand_uri cellphone:head_quarters ?head_quarters ." +
+                            "?brand_uri cellphone:type ?type ." +
+                            "?brand_uri cellphone:website ?website ." +
+                            "?model_uri  cellphone:has_brand ?brand_uri ." +
+                            "?model_uri cellphone:model_name \"" + modelName + "\" ." + 
+                            "?model_uri cellphone:CPU ?CPU ." +
+                            "?model_uri cellphone:EDGE ?EDGE ." +
+                            "?model_uri cellphone:GPRS ?GPRS ." +
+                            "?model_uri cellphone:RAM ?RAM ." +
+                            "?model_uri cellphone:audio_jack ?audio_jack ." +
+                            "?model_uri cellphone:battery ?battery . " +
+                            "?model_uri cellphone:image ?image . " +    
+                            "?model_uri cellphone:primary_camera ?primary_camera ." + 
+                            "?model_uri cellphone:rating ?rating ." +
+                            "?model_uri cellphone:screen_size ?screen_size ." +
+                            "?model_uri cellphone:sim ?sim . " +
+                            "?model_uri cellphone:os ?os. " +
+                            "?model_uri cellphone:weight ?weight." +
+                            "?profit_id cellphone:profit_has_model ?model_uri . " +
+                            "?profit_id cellphone:profit_2014 ?profit_2014 ." +
+                            "?profit_id cellphone:profit_2015 ?profit_2015 ." +
+                            "?profit_id cellphone:profit_2016 ?profit_2016 ." +
+                         "}" +
+                            "UNION" + 
+                         "{ " + 
+                            "?brand_uri_1 cellphone:brand_name \"" + BrandName + "\" ." +
+                            "?model_uri_1 cellphone:has_brand ?brand_uri_1 ." +
+                            "?model_uri_1 cellphone:model_name \"" + modelName + "\"." +
+                            "?comment_id cellphone:has_model ?model_uri_1 . " + 
+                            "?comment_id cellphone:comment_string ?comment_string ." +
+                         "}" +
+                        "}" ;
+            $.ajax({
+                url: SPARQL_ENDPOINT
+                , method: 'post'
+                , data: { query: query}
+            }).done(function (result) {
+                console.log(result);
+            }).fail(function (e) {
+                console.log(e);
+            })
+        }
+
+        //we get the top 15 models based on the user ratings
+        // we merge comments and the features table and extract some important features too
+        //returns a list of objects
+        function getTop10ModelsWithHighestUserRating(){
+            var SPARQL_ENDPOINT = 'http://localhost:3030/ds4/query';
+            var query = "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
+                        "PREFIX owl: <http://www.w3.org/2002/07/owl#> " +
+                        "PREFIX cellphone: <http://www.usc.org/dbi/cellphone#>" +
+                        "SELECT ?brand_name ?model_name ?average ?image ?CPU ?battery ?RAM ?audio_jack ?os " +
+                        "WHERE { " +
+                                "{"+
+                                        "?model_uri  cellphone:model_name ?model_name ." +
+                                        "?model_uri  cellphone:has_brand ?brand_uri ." + 
+                                        "?brand_uri  cellphone:brand_name ?brand_name ." + 
+                                        "?model_uri cellphone:CPU ?CPU . "+ 
+                                        "?model_uri cellphone:RAM ?RAM . "+ 
+                                        "?model_uri cellphone:audio_jack ?audio_jack ."+ 
+                                        "?model_uri cellphone:battery ?battery . "+ 
+                                        "?model_uri cellphone:image ?image . "  +   
+                                        "?model_uri cellphone:os ?os. "+ 
+                                        "?model_uri cellphone:weight ?weight."+ 
+                                        "{"+ 
+                                            "SELECT ?model_uri (AVG(?rating) as ?average) (COUNT(?rating) as ?count) "+ 
+                                            "WHERE {"+ 
+                                                "?comment_uri cellphone:has_model ?model_uri ."+ 
+                                                "?comment_uri cellphone:comment_rating ?rating ."+ 
+                                                "} GROUP BY ?model_uri " + 
+                                                "HAVING (?count > 700) "+ 
+                                                "ORDER BY DESC (?average) "+ 
+                                                "LIMIT 15"+ 
+                                        "}"+ 
+                                "}"+ 
+                            "}";
+            $.ajax({
+                url: SPARQL_ENDPOINT
+                , method: 'post'
+                , data: { query: query}
+            }).done(function (result) {
+                console.log(result);
+            }).fail(function (e) {
+                console.log(e);
+            })
+        }
+
+        // Returns the top five brand names based on revenue, it also gives the details of these brands
+        function getTop5BrandsBasedOnRevenue(){
+            var SPARQL_ENDPOINT = 'http://localhost:3030/ds4/query';
+            var query = "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
+                        "PREFIX owl: <http://www.w3.org/2002/07/owl#> " +
+                        "PREFIX cellphone: <http://www.usc.org/dbi/cellphone#>" +
+                        "SELECT ?brand_name (SUM(?profits) as ?revenew) ?area_served ?employee_count ?founded ?head_quarters ?type ?website ?brand_uri " +
+                            "WHERE {" +
+           			            "?brand_uri cellphone:areas_served ?area_served ." +
+                                "?brand_uri cellphone:employee_count ?employee_count ." +
+                                "?brand_uri cellphone:founded ?founded ." +
+                                "?brand_uri cellphone:head_quarters ?head_quarters ." +
+                                "?brand_uri cellphone:type ?type ." +
+                                "?brand_uri cellphone:website ?website ." +
+                                "?model_uri  cellphone:has_brand ?brand_uri ." +
+                                "?brand_uri  cellphone:brand_name ?brand_name . " +
+                                "?model_uri  cellphone:model_name ?model_name ." +
+    				                "{" +
+                                        "SELECT ?model_uri ?profits " +
+                                        "WHERE { ?profit_uri cellphone:profit_has_model ?model_uri . " +
+                                                "?profit_uri cellphone:profit_2014 ?profits ." +
+                                                "}"+
+                                    "}"+
+			            "} GROUP BY ?brand_uri ?area_served ?employee_count ?founded ?head_quarters ?type ?website ?brand_name ORDER BY DESC (?revenew) LIMIT 5";
+            $.ajax({
+                url: SPARQL_ENDPOINT
+                , method: 'post'
+                , data: { query: query}
+            }).done(function (result) {
+                console.log(result);
+            }).fail(function (e) {
+                console.log(e);
+            })
+        }
+   
+        function demo(){
+
+            var SPARQL_ENDPOINT = 'http://localhost:3030/ds4/query';
+            var battery_value =    'Removable LiPo 1700 mAh battery' ;
+            var query = "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
+                        "PREFIX owl: <http://www.w3.org/2002/07/owl#> " +
+                        "PREFIX cellphone: <http://www.usc.org/dbi/cellphone#>" +
+                        "SELECT ?brand_name (SUM(?profits) as ?revenew) ?area_served ?employee_count ?founded ?head_quarters ?type ?website ?brand_uri " +
+                            "WHERE {" +
+           			            "?brand_uri cellphone:areas_served ?area_served ." +
+                                "?brand_uri cellphone:employee_count ?employee_count ." +
+                                "?brand_uri cellphone:founded ?founded ." +
+                                "?brand_uri cellphone:head_quarters ?head_quarters ." +
+                                "?brand_uri cellphone:type ?type ." +
+                                "?brand_uri cellphone:website ?website ." +
+                                "?model_uri  cellphone:has_brand ?brand_uri ." +
+                                "?brand_uri  cellphone:brand_name ?brand_name . " +
+                                "?model_uri  cellphone:model_name ?model_name ." +
+    				                "{" +
+                                        "SELECT ?model_uri ?profits " +
+                                        "WHERE { ?profit_uri cellphone:profit_has_model ?model_uri . " +
+                                                "?profit_uri cellphone:profit_2014 ?profits ." +
+                                                "}"+
+                                    "}"+
+			            "} GROUP BY ?brand_uri ?area_served ?employee_count ?founded ?head_quarters ?type ?website ?brand_name ORDER BY DESC (?revenew) LIMIT 5";
+            $.ajax({
+                url: SPARQL_ENDPOINT
+                , method: 'post'
+                , data: { query: query}
+            }).done(function (result) {
+                console.log(result);
+            }).fail(function (e) {
+                console.log(e);
+            })
+
+        }
+
+    </script>
+    <button type="button" onclick="getLargeSizeGoodPhones(5)">getLargeSizeGoodPhones!</button> <br> <br>
+    <button type="button" onclick="weightLessPhoneWithAndroidOS(70)">weightLessPhoneWithAndroidOS!</button><br> <br>
+    <button type="button" onclick="getDetailsGivenModelNameAndBrandName()">getDetailsGivenModelNameAndBrandName!</button><br> <br>
+    <button type="button" onclick="getTop10ModelsWithHighestUserRating()">getTop10ModelsWithHighestUserRating!</button><br> <br>
+    <button type="button" onclick="getTop5BrandsBasedOnRevenue()">getTop5BrandsBasedOnRevenue!</button>
+</body>
+
+</html>

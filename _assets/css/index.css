@@ -1,0 +1,388 @@
+html,
+body,
+div,
+h1,
+p,
+a,
+video {
+  margin: 0;
+  padding: 0;
+  text-shadow: none;
+}
+
+@font-face {
+  font-family: 'myfont';
+  /*src:  url('../../space_age/space_age.ttf');*/
+  /*src:  url('../../atlantic_cruise/ac.ttf');*/
+  src:  url('../../fonts/solar/Solar_Regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'ac';
+  src:  url('../../fonts/ac/ac.ttf') format('truetype');
+}
+
+#header1 {
+	height: 80px;
+    background-color: black;
+    text-shadow: none;
+    opacity: 0.4;
+}
+
+/*video.fullscreen { 
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  min-width: 100%;
+  min-height: 100%;
+  width: auto;
+  height: auto;
+  z-index: -100;
+  transform: translate(-50%, -50%);
+  background-size: cover;
+  transition: 1s opacity;
+}*/
+
+video { 
+    /*width: 100%;
+    height: 100%;*/
+    z-index: -100;
+    background: url(//demosthenes.info/assets/images/polina.jpg) no-repeat;
+    background-size: cover;
+    transition: 1s opacity;
+    /*opacity: 0.3;*/
+}
+.stopfade { 
+   opacity: .5;
+}
+
+#polina { 
+  font-family: Agenda-Light, Agenda Light, Agenda, Arial Narrow, sans-serif;
+  font-weight:100; 
+  background: rgba(0,0,0,0.3);
+  color: white;
+  padding: 2rem;
+  width: 33%;
+  margin:2rem;
+  float: right;
+  font-size: 1.2rem;
+}
+h1 {
+  font-size: 3rem;
+  text-transform: uppercase;
+  margin-top: 0;
+  letter-spacing: .3rem;
+}
+#polina button { 
+  display: block;
+  width: 80%;
+  padding: .4rem;
+  border: none; 
+  margin: 1rem auto; 
+  font-size: 1.3rem;
+  background: rgba(255,255,255,0.23);
+  color: #fff;
+  border-radius: 3px; 
+  cursor: pointer;
+  transition: .3s background;
+}
+#polina button:hover { 
+   background: rgba(0,0,0,0.5);
+}
+
+a {
+  display: inline-block;
+  color: #fff;
+  text-decoration: none;
+  background:rgba(0,0,0,0.5);
+  padding: .5rem;
+  transition: .6s background; 
+}
+a:hover{
+  background:rgba(0,0,0,0.9);
+}
+@media screen and (max-width: 500px) { 
+  div{width:70%;} 
+}
+@media screen and (max-device-width: 800px) {
+  html { background: url(https://thenewcode.com/assets/images/polina.jpg) #000 no-repeat center center fixed; }
+  #bgvid { display: none; }
+}
+
+#video {
+	width: 100%;
+    height: 100%;
+}
+
+#header1 {
+	height: 80px;
+    background-color: black;
+    text-shadow: none;
+    opacity: 0.7;
+    position: absolute;
+    width: 100%;
+    top: 0;
+    border-bottom: 1px solid white;
+}
+
+#header_title1, #header_title2, #header_title3, #header_title4, #header_title5, #header_title6 {
+	color: #ec7741;
+    margin: 20px;
+    position: absolute;
+    top: -6px;
+    text-shadow: none;
+    font-family: myfont;
+    font-size: 40px;
+    left: 2em;
+    cursor: pointer;
+}
+
+#header_title2 {
+	left: 3.5em;
+}
+
+#header_title3 {
+	color: white;
+	left: 6em;
+}
+
+#header_title4 {
+	left: 78%;
+	color: white;
+}
+
+#header_title4:hover {
+	color: #ec7741;
+}
+
+#header_title5 {
+	left: 82%;
+    color: white;
+}
+
+#header_title5:hover {
+	color: #ec7741;
+}
+
+#header_title6 {
+	left: 90%;
+    color: white;
+}
+
+#header_title6:hover {
+	color: #ec7741;
+}
+
+#page2, #page3, #page4 {
+	position: absolute;
+	top: 100%;
+	width: 100%;
+	height: 92%;
+	opacity: 0.9;
+}
+
+#page2 {
+	background-color: #03a9f4;
+	/*background: linear-gradient(to bottom right,#03a9f4, #017);*/
+	background: linear-gradient(to bottom right,#02821D, #c4e23e);
+}
+
+#page3 {
+	background-color: #ef5350;
+	/*background: linear-gradient(to bottom right,#ff5b26, #ffb140);*/
+	/*background: linear-gradient(to bottom right,#ff394d, #ffb140);*/
+	background: linear-gradient(to bottom right,#ff5042, #ffb140);
+}
+
+#page4 {
+	background-color: #283593;
+	background: linear-gradient(to bottom right,#283593, #701b95);
+}
+
+#box1, #box2, #box3, #box4 {
+	width: 16%;
+    left: 7%;
+    top: 210px;
+    position: relative;
+    margin: 0;
+    padding: 0;
+    float: left;
+}
+
+#box2 {
+	left: 14%;
+}
+
+#box3 {
+	left: 21%;
+}
+
+#box4 {
+	left: 28%;
+}
+
+.profiles {
+	margin-top: 5%;
+	color: white;
+    text-align: center;
+}
+
+.names {
+	font-family: myfont;
+    font-size: 30px;
+}
+
+.uscid {
+	font-family: myfont;
+    font-size: 23px;
+    margin-top: -1%;
+}
+
+#p2 {
+    width: 205px;
+    height: 100%;
+    background: black;
+    opacity: 0.7;
+    z-index: 1;
+}
+
+.divider {
+  /* height: 20%; */
+  cursor: pointer;
+}
+
+#p21:hover, #p22:hover, #p23:hover, #p24:hover, #p25:hover {
+  background-color: #e86546;
+}
+
+.quer {
+  padding-top: 2%;
+  text-align: right;
+  font-family: myfont;
+  font-size: 24px;
+  color: white;
+  padding-right: 11%;
+}
+
+#message {
+  position: absolute;
+    top: 40%;
+    left: 30%;
+    font-family: myfont;
+    font-size: 45px;
+}
+
+.queryPanel {
+  position: absolute;
+  top: 4%;
+  left: 17%;
+  visibility: visible;
+  width: 1101px;
+  height: 95%;
+}
+
+.aim_title {
+  background-color: black;
+    text-align: center;
+    padding: 9px;
+    font-family: myfont;
+    font-size: 28px;
+    color: white;
+}
+
+.aim_content {
+  font-family: monospace;
+    font-size: 18px;
+    padding: 20px 16px;
+    background: white;
+    text-align: center;
+}
+
+.aim_box {
+  box-shadow: 8px 5px 12px #000000;
+  float: left;
+  width: 595px;
+  margin: 0 5% 5% 0;
+}
+
+.query_response_box {
+  box-shadow: 8px 5px 12px #000000;
+  float: left;
+  width: 550px;
+  margin: 0 5% 5% 27%;
+}
+
+.query_response_content {
+  font-family: inherit;
+  font-size: 16px;
+  padding: 20px 16px;
+  background: white;
+  text-align: left;
+  /* overflow-y: scroll; */
+}
+
+.col1, .col2 {
+  width: 40%;
+  height: 100%;
+  float: left;
+  margin-right: 5%;
+}
+
+#p26321, #p27321 {
+  width: 50%;
+}
+
+.modal-body .modal-header, .modal-footer {
+  text-align: center;
+ }
+    
+
+.modal-body{
+    height: 500px;
+    overflow-y: auto;
+}
+
+.modal_feature_header{
+  font-size: 200%;
+  font-weight: 3;
+  text-decoration: underline;
+}
+
+.redText
+    {
+        color:red;
+    }
+    
+.blackText
+    {
+        color:black;
+        font-weight:bold;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
